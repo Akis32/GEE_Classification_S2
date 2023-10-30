@@ -22,16 +22,15 @@ After setting the parameters, run the script. It may generate errors, but the ma
 ## PART 2 - TRAINING DATA
 ### Predefined Sample Classes:
 The following land cover classes are predefined:
-- Waterbodies (0)
+- Crops (0)
 - Soil (1)
-- Bare (2)
-- Buildup (3)
-- Crops (4)
-- Shrubs (5)
-- Grasslands (6)
-- Mixed Forest (7)
-- Coniferous (8)
-- Scar (9)
+- Buildup/Baren (2)
+- Waterbodies (3)
+- Sparse Vegetation (4)
+- Transitional Woodland (5)
+- Mixed Forest (6)
+- Coniferous (7)
+- Scar (8)
 
 If you need to gather new training data, use the same class names or modify the script accordingly.
 
