@@ -5835,7 +5835,7 @@ var Greece = LISB.filter(ee.Filter.equals('country_na', 'Greece'));
 // Function to mask clouds
 function s2ClearSky(image) {
       var scl = image.select('SCL');
-      var clear_sky_pixels = scl.eq(4).or(scl.eq(5)).or(scl.eq(6)).or(scl.eq(11));
+      var clear_sky_pixels = scl.eq(1).or(scl.eq(2)).or(scl.eq(3)).or(scl.eq(4)).or(scl.eq(5)).or(scl.eq(6)).or(scl.eq(7)).or(scl.eq(10)).or(scl.eq(11));
       return image.updateMask(clear_sky_pixels);
 }
 
@@ -5855,7 +5855,7 @@ var AOI = 'Attikis';
 var smooth = 3;
 
 //Number of trees
-var treeNo = 300;
+var treeNo = 100;
 
 
 //-----------------------Model-------------------------------------//
@@ -5872,7 +5872,7 @@ function main (){
   var croplands = ee.Image(0)
   .where(CorineLC2018.eq(212).or(CorineLC2018.eq(222)),0)
   .where(CorineLC2018.neq(212).and(CorineLC2018.neq(222)),1)
-  .clip(Greece)
+  .clip(Greece);
  
  //Creates an image from S2 database
  var Img = S2.filterDate(date_start,date_end)
@@ -5913,12 +5913,18 @@ function main (){
   var testSet = trainData.filter(ee.Filter.greaterThanOrEquals('random', 0.8));
   
   // Classification with RF
-  var classifier = ee.Classifier.smileRandomForest(treeNo).train(trainSet, label, bands);
+  var classifier = ee.Classifier.smileRandomForest({
+      numberOfTrees: treeNo,
+      minLeafPopulation: 3,  // Minimum number of pixels in a leaf node
+      bagFraction: 0.7,      // Fraction of input used for training each tree
+      maxNodes: 1000,        // Maximum number of leaf nodes in each tree
+      seed: 0                // Seed for reproducibility
+      }).train(trainSet, label, bands);
   
   // Classify the image
   var classifiedImg = input.classify(classifier);
   
-  var classclassifiedImg_mod = classifiedImg.multiply(croplands)
+  var classclassifiedImg_mod = classifiedImg.multiply(croplands);
   
   //Classified image smoothing
   var Kernel = ee.Kernel.square({radius:smooth,units:"pixels"});
@@ -6003,15 +6009,21 @@ function main (){
   legendPanel.add(legend);
   
   // Accuracy Assessment
-  var confusionMatrix = ee.ConfusionMatrix(testSet.classify(classifier)
+  var confusionMatrix = classifier.confusionMatrix();
+  print('Train Overall Accuracy:', confusionMatrix.accuracy());
+  print('Train Kappa statistic', confusionMatrix.kappa());
+  
+  var errorMatrix = ee.ConfusionMatrix(testSet.classify(classifier)
      .errorMatrix({
        actual: 'Class', 
         predicted: 'classification'
       }));
 
-  print('Confusion matrix:', confusionMatrix);
-  print('Overall Accuracy:', confusionMatrix.accuracy());
-  print('Kappa statistic', confusionMatrix.kappa());
+  print('Confusion matrix:', errorMatrix);
+  print('Validation Overall Accuracy:', errorMatrix.accuracy());
+  print('Validation Kappa statistic', errorMatrix.kappa());
+  
+  
   
   //Export results
 
@@ -6025,4 +6037,3 @@ function main (){
 }
 
 main();
-
