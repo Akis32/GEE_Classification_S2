@@ -5727,6 +5727,20 @@ var classPalette = [
   '#5b3737',   //Scar (8)
   ];
   
+var classPalette_RFwDW = [
+  '#ffff00',   //Crops (0)
+  '#c4281b',   //Buildup (1)
+  '#7a87c6',   //Baren (2)
+  '#e6a600',   //Soil(3)
+  '#419bdf',   //Waterbodies(4)
+  '#ffffa8',   //Sparse Vegetation (5)
+  '#a6e64d',   //Transitional Woodland (6)
+  '#4dff00',   //MixedForest (7)
+  '#00a600',   //Coniferous (8)
+  '#5b3737',   //Scar (9)
+  ];
+  
+  
 // Define list pairs of DW LULC label and color.
 var CLASS_NAMES = [
     'water', 'trees', 'grass', 'flooded_vegetation', 'crops',
@@ -5883,6 +5897,35 @@ function main (){
     kernel: Kernel
   });
   
+  //Create hubrid land cover from RF and DW data sets
+  var DW_select2022 = DW2022.select('label');
+  
+  
+  var DW_mask2022 = ee.Image(0)
+  .where(DW_select2022.neq(4).and(DW_select2022.neq(6)).and(DW_select2022.neq(7)),1)
+  .clip(Greece);
+  
+  var classifiedImg2022_maskDW = classifiedImg2022.updateMask(DW_mask2022);
+  
+  //Compose image from DW and RF 
+  var classifiedImg2022_RFwDW = ee.Image(0)
+  .where(DW_select2022.eq(4),0) // Isolate crops DW (class 0)
+  .where(DW_select2022.eq(6),1) // Isolate buildup DW (class 1)
+  .where(DW_select2022.eq(7),2) // Isolate bare land DW (class 2)
+  .where(classifiedImg2022_maskDW.eq(0),0) //Isolate crops RF
+  .where(classifiedImg2022_maskDW.eq(1),3) //Isolate soil RF (class 3)
+  .where(classifiedImg2022_maskDW.eq(2),2) //Isolate baren RF
+  .where(classifiedImg2022_maskDW.eq(3),4) //Isolate waterbodies RF (class 4)
+  .where(classifiedImg2022_maskDW.eq(4),5) //Isolate Sparse Vegetation RF (class 5)
+  .where(classifiedImg2022_maskDW.eq(5),6) //Isolate Transitional Woodland RF (class 6)
+  .where(classifiedImg2022_maskDW.eq(6),7) //Isolate MixedForest RF (class 7)
+  .where(classifiedImg2022_maskDW.eq(7),8) //Isolate Coniferous RF (class 8)
+  .where(classifiedImg2022_maskDW.eq(8),9) //Isolate Scar RF (class 9)
+  .clip(Greece);
+  
+  
+  
+  
   //----------------------2023 Classification
   //DW classification dataset
  var DW2023 = DW.filterDate('2023-09-01','2023-10-30')
@@ -5909,18 +5952,47 @@ function main (){
     reducer: ee.Reducer.mode(),
     kernel: Kernel
   });
+  
+  //Create hubrid land cover from RF and DW data sets
+  var DW_select2023 = DW2023.select('label');
+  
+  var DW_mask2023 = ee.Image(0)
+  .where(DW_select2023.neq(4).and(DW_select2023.neq(6)).and(DW_select2023.neq(7)),1)
+  .clip(Greece);
+  
+  var classifiedImg2023_maskDW = classifiedImg2023.updateMask(DW_mask2023);
+  
+  //Compose image from DW and RF 
+  var classifiedImg2023_RFwDW = ee.Image(0)
+  .where(DW_select2023.eq(4),0) // Isolate crops DW (class 0)
+  .where(DW_select2023.eq(6),1) // Isolate buildup DW (class 1)
+  .where(DW_select2023.eq(7),2) // Isolate bare land DW (class 2)
+  .where(classifiedImg2023_maskDW.eq(0),0) //Isolate crops RF
+  .where(classifiedImg2023_maskDW.eq(1),3) //Isolate soil RF (class 3)
+  .where(classifiedImg2023_maskDW.eq(2),2) //Isolate baren RF
+  .where(classifiedImg2023_maskDW.eq(3),4) //Isolate waterbodies RF (class 4)
+  .where(classifiedImg2023_maskDW.eq(4),5) //Isolate Sparse Vegetation RF (class 5)
+  .where(classifiedImg2023_maskDW.eq(5),6) //Isolate Transitional Woodland RF (class 6)
+  .where(classifiedImg2023_maskDW.eq(6),7) //Isolate MixedForest RF (class 7)
+  .where(classifiedImg2023_maskDW.eq(7),8) //Isolate Coniferous RF (class 8)
+  .where(classifiedImg2023_maskDW.eq(8),9) //Isolate Scar RF (class 9)
+  .clip(Greece);
+  
+  
 
   //Add to map
   Map.centerObject(Greece,8);
   Map.addLayer(Img2022,Viz_CI,"Color Infrared 2022");
-  Map.addLayer(classclassifiedImg_mod2022, {palette: classPalette, min: 0, max: 8}, 'Land Cover 2022 (Corine crops)',false);
+  //Map.addLayer(classclassifiedImg_mod2022, {palette: classPalette, min: 0, max: 8}, 'Land Cover 2022 (Corine crops)',false);
   Map.addLayer(classifiedImg2022, {palette: classPalette, min: 0, max: 8}, 'Land Cover 2022');
   Map.addLayer(DW2022.select('label'),{min: 0, max: 8, palette: VIS_PALETTE},'DW land cover 2022');
+  Map.addLayer(classifiedImg2022_RFwDW, {palette: classPalette_RFwDW, min: 0, max: 9}, 'Land Cover 2022 hybrid');
 
   Map.addLayer(Img2023,Viz_CI,"Color Infrared 2023");
-  Map.addLayer(classclassifiedImg_mod2023, {palette: classPalette, min: 0, max: 8}, 'Land Cover 2023 (Corine crops)',false);
+  //Map.addLayer(classclassifiedImg_mod2023, {palette: classPalette, min: 0, max: 8}, 'Land Cover 2023 (Corine crops)',false);
   Map.addLayer(classifiedImg2023, {palette: classPalette, min: 0, max: 8}, 'Land Cover 2023');
   Map.addLayer(DW2023.select('label'),{min: 0, max: 8, palette: VIS_PALETTE},'DW land cover 2023');
+  Map.addLayer(classifiedImg2023_RFwDW, {palette: classPalette_RFwDW, min: 0, max: 9}, 'Land Cover 2023 hybrid');
   
   Map.addLayer(CorineLC2018_Clip, {}, 'Corine 2018');
   
@@ -5944,6 +6016,8 @@ function main (){
       padding: '8px 15px'
     }
   });
+  
+  //--------------RF lagend
   
   // Create legend title
   var legendTitle = ui.Label({
@@ -5987,9 +6061,33 @@ function main (){
     }  
  
 
+  
+  
+  //----------------RF with DW lagend
+   // Create legend title
+  var legendTitle2 = ui.Label({
+    value: 'Land Cover (DW with RF)',
+    style: {
+      fontWeight: 'bold',
+      fontSize: '14px',
+      margin: '0 0 4px 0',
+      padding: '0'
+      }
+  });
+ 
+  // Add the title to the panel
+  legend.add(legendTitle2);
+  
+  // name of the legend
+  var names2 = ['Crops','Buildup','Baren' ,'Soil','Waterbodies', 'Sparse vegetation', 'Transitional vegetation', 'Mixed forest', 'Coniferous','Earth scar'];
+  
+  // Add color and and names to legend
+  for (var j = 0; j < 10; j++) {
+    legend.add(makeRow(classPalette_RFwDW[j], names2[j]));
+    }  
+ 
+
   legendPanel.add(legend);
-  
-  
   
   
   //Export results
