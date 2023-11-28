@@ -5668,105 +5668,8 @@ var GAUL_L2 = ee.FeatureCollection("FAO/GAUL/2015/level2"),
             })]),
     DW = ee.ImageCollection("GOOGLE/DYNAMICWORLD/V1"),
     DEM = ee.Image("USGS/SRTMGL1_003");
-    //----------------------- User Guide: Land Cover Classification ------------------------//
 
-// Introduction:
-// This script is designed to classify land cover in Greece using Random Forest (RF) Regression from Sentinel-2 Level-2 images.
-
-
-// To use this code effectively, follow these steps:
-
-// Step 1: Customize Parameters
-// - Specify the date range (start and end dates) to sample Sentinel-2 images.
-// - Define the cloud cover threshold as a percentage in the 'cloud' variable.
-// - Specify the number of trees for the RF algorithm
-// - (Optional) By default the code is used to classify the land cover for Greece but there is an option to specify your Area Of Interest (AOI) by selecting from the "ADMINISTRATIVE BOUNDARIES SELECTION" list below 
-//  and replace the variable Greece with AOI_Selection to classify land cover for an specific region.
- 
-// Step 2: Image Collection and Preprocessing
-// - The code will collect all images with cloud cover less than the specified threshold within the date range and will apply Random Forest ml algorithm 
-// - for the region. The results efficiency of the algorithm is desplayed on the Console
-
-// Optional Parameters:
-// - In the parameters section, you can change the smoothing window for the classified image.
-// - Adjust the number of trees used in the Random Forest algorithm.
-
-// After setting the parameters, run the script. It may generate errors, but the main goal is to visualize the image for selecting training data.
-
-// PART 2 - TRAINING DATA
-// Predefined shample Classes:
-// - The following land cover classes are predefined:
-  //    Waterbodies (0)
-  //    Soil (1)
-  //    Buildup (2)
-  //    Crops (3)
-  //    Sparse Vegetation (4)
-  //    Transitional woodland (5)
-  //    MixedForest (6)
-  //    Coniferous (7)
-  //    Scar (8)
-
-// If you need to gather new training data, use the same class names or modify the script accordingly.
-
-// ADMINISTRATIVE BOUNDARIES SELECTION:
-// For the filter selection in Greece, set the variable 'AOI' to one of the following administrative areas:
-
-// - Dramas
-// - Evrou
-// - Kavalas
-// - Rodopis
-// - Xanthis
-// - Attikis
-// - Achaias
-// - Aitolias Kai Akarnanias
-// - Ileias
-// - Florinis
-// - Grevenon
-// - Kastorias
-// - Kozanis
-// - Kefallinias
-// - Kerkyras
-// - Lefkados
-// - Zakynthou
-// - Artis
-// - Ioanninon
-// - Prevezis
-// - Thesprotias
-// - Agiou Orous
-// - Chalkidikis
-// - Imathias
-// - Kilkis
-// - Pellis
-// - Pierias
-// - Serron
-// - Thessalonikis
-// - Chanion
-// - Irakleiou
-// - Lasithiou
-// - Rethymnis
-// - Argolidos
-// - Arkadias
-// - Korinthias
-// - Lakonias
-// - Messinias
-// - Evrytanias
-// - Evvoias
-// - Fokidos
-// - Fthiotidos
-// - Voiotias
-// - Karditsis
-// - Larisis
-// - Magnisias
-// - Trikalon
-// - Chiou
-// - Lesvou
-// - Samou
-// - Dodekanisou
-// - Kykladon
-// - Simi
-
-
-//------------------------------------------------------------------------------------//
+//-----------------------  Land Cover Classification with parameters ------------------------
 
 //------------------------Constants----------------------------------//
 //visualization parameters
@@ -5780,8 +5683,7 @@ var classPalette = [
   '#ffffa8',   //Sparse Vegetation (4)
   '#a6e64d',   //Transitional Woodland (5)
   '#4dff00',   //MixedForest (6)
-  '#00a600',   //Coniferous (7)
-  '#5b3737',   //Scar (8)
+  '#00a600'   //Coniferous (7)
   ];
   
 // Define list pairs of DW LULC label and color.
@@ -5792,6 +5694,30 @@ var CLASS_NAMES = [
 var VIS_PALETTE = [
     '419bdf', '397d49', '88b053', '7a87c6', 'e49635', 'dfc35a', 'c4281b',
     'a59b8f', 'b39fe1'];
+    
+//DW visualization
+var dwClassInfo = {
+  0: {name: 'water', color: '#419BDF'},
+  1: {name: 'trees', color: '#397D49'},
+  2: {name: 'grass', color: '#88B053'},  
+  3: {name: 'flooded_vegetation', color: '#7A87C6'},
+  4: {name: 'crops', color: '#E49635'},
+  5: {name: 'shrub_and_scrub', color: '#DFC35A'},
+  6: {name: 'built', color: '#C4281B'},
+  7: {name: 'bare', color: '#A59B8F'},
+  8: {name: 'snow_and_ice', color: '#B39FE1'},
+};
+
+// Extract a list of property values from a dictionary.
+function getClassProperty(dict, prop) {
+  return ee.Dictionary(dict).values().map(
+    function (v) {return ee.Dictionary(v).get(prop)});
+}
+
+var probabilityBands = getClassProperty(dwClassInfo, 'name');
+var dwClassPalette = getClassProperty(dwClassInfo, 'color');
+var dwVisParams = {min: 0, max: 8, palette: dwClassPalette.getInfo()};
+
 
 //Corine 2018
 var CorineLC2018 = Corine.select('landcover');
@@ -5829,6 +5755,9 @@ function sampling(){
   
 //DEM Data
 var Elevetion = DEM.clip(Greece).select('elevation');
+
+//Population density data
+var Population = Pop.first().select('population_density');
   
 //Creates an image from S2 database
  var Img = S2.filterDate(date_start,date_end)
@@ -5837,7 +5766,8 @@ var Elevetion = DEM.clip(Greece).select('elevation');
                     .map(s2ClearSky)
                     .median()
                     .clip(Greece)
-                    .addBands(Elevetion);
+                    .addBands(Elevetion)
+                    .addBands(Population);
  
  
   //Creates a training dataset
@@ -5848,12 +5778,11 @@ var Elevetion = DEM.clip(Greece).select('elevation');
     .merge(Crops)
     .merge(Transitional)
     .merge(MixedForest)
-    .merge(Coniferous)
-    .merge(Scar);
+    .merge(Coniferous);
   
   // Stores the land cover labels
   var label = 'Class';
-  var bands = ['B2', 'B3', 'B4', 'B8','B11','B12','elevation'];
+  var bands = ['B2', 'B3', 'B4', 'B8','B11','B12','elevation','population_density'];
   var input = Img.select(bands);
   
   // Overlay the points on the imagery to get training.
@@ -5903,7 +5832,10 @@ function main (){
   var classifier = sampling();
   
   //DEM Data
-var Elevetion = DEM.clip(Greece).select('elevation');
+ var Elevetion = DEM.clip(Greece).select('elevation');
+ 
+ //Population density data
+var Population = Pop.first().select('population_density');
  
  //Clip land Cover
   var CorineLC2018_Clip = CorineLC2018.clip(Greece);
@@ -5915,12 +5847,14 @@ var Elevetion = DEM.clip(Greece).select('elevation');
   .clip(Greece);
   
   //Band selection
-  var band = ['B2', 'B3', 'B4', 'B8','B11','B12','elevation'];
+  var band = ['B2', 'B3', 'B4', 'B8','B11','B12','elevation','population_density'];
  
  //----------------------2022 Classification
  //DW classification dataset
  var DW2022 = DW.filterDate('2022-09-01','2022-10-30')
-                 .median()
+                 .select(probabilityBands)
+                 .reduce(ee.Reducer.mean())
+                 .toArray().arrayArgmax().arrayGet(0).rename('label')
                  .clip(Greece);
                  
  //Creates an image from S2 database 
@@ -5930,7 +5864,8 @@ var Elevetion = DEM.clip(Greece).select('elevation');
                     .map(s2ClearSky)
                     .median()
                     .clip(Greece)
-                    .addBands(Elevetion);
+                    .addBands(Elevetion)
+                    .addBands(Population);
  
   
   var img_input2022 = Img2022.select(band);
@@ -5951,7 +5886,9 @@ var Elevetion = DEM.clip(Greece).select('elevation');
   //----------------------2023 Classification
   //DW classification dataset
  var DW2023 = DW.filterDate('2023-09-01','2023-10-30')
-                 .median()
+                 .select(probabilityBands)
+                 .reduce(ee.Reducer.mean())
+                 .toArray().arrayArgmax().arrayGet(0).rename('label')
                  .clip(Greece);
                  
  //Creates an image from S2 database 
@@ -5961,7 +5898,8 @@ var Elevetion = DEM.clip(Greece).select('elevation');
                     .map(s2ClearSky)
                     .median()
                     .clip(Greece)
-                    .addBands(Elevetion);
+                    .addBands(Elevetion)
+                    .addBands(Population);
  
   var img_input2023 = Img2023.select(band);
  
@@ -5977,16 +5915,18 @@ var Elevetion = DEM.clip(Greece).select('elevation');
   });
 
   //Add to map
+  dwVisParams.bands ='label';
+  
   Map.centerObject(Greece,8);
   Map.addLayer(Img2022,Viz_CI,"Color Infrared 2022");
-  Map.addLayer(classclassifiedImg_mod2022, {palette: classPalette, min: 0, max: 8}, 'Land Cover 2022 (Corine crops)',false);
-  Map.addLayer(classifiedImg2022, {palette: classPalette, min: 0, max: 8}, 'Land Cover 2022');
-  Map.addLayer(DW2022.select('label'),{min: 0, max: 8, palette: VIS_PALETTE},'DW land cover 2022');
+  Map.addLayer(classclassifiedImg_mod2022, {palette: classPalette, min: 0, max: 7}, 'Land Cover 2022 (Corine crops)',false);
+  Map.addLayer(classifiedImg2022, {palette: classPalette, min: 0, max: 7}, 'Land Cover 2022');
+  Map.addLayer(DW2022,dwVisParams,'DW land cover 2022',false);
 
   Map.addLayer(Img2023,Viz_CI,"Color Infrared 2023");
-  Map.addLayer(classclassifiedImg_mod2023, {palette: classPalette, min: 0, max: 8}, 'Land Cover 2023 (Corine crops)',false);
-  Map.addLayer(classifiedImg2023, {palette: classPalette, min: 0, max: 8}, 'Land Cover 2023');
-  Map.addLayer(DW2023.select('label'),{min: 0, max: 8, palette: VIS_PALETTE},'DW land cover 2023');
+  Map.addLayer(classclassifiedImg_mod2023, {palette: classPalette, min: 0, max: 7}, 'Land Cover 2023 (Corine crops)',false);
+  Map.addLayer(classifiedImg2023, {palette: classPalette, min: 0, max: 7}, 'Land Cover 2023');
+  Map.addLayer(DW2023,dwVisParams,'DW land cover 2023',false);
   
   Map.addLayer(CorineLC2018_Clip, {}, 'Corine 2018');
   
@@ -6045,12 +5985,35 @@ var Elevetion = DEM.clip(Greece).select('elevation');
   };
   
   // name of the legend
-  var names = ['Crops' ,'Soil','Baren/Buildup','Waterbodies', 'Sparse vegetation', 'Transitional vegetation', 'Mixed forest', 'Coniferous','Earth scar'];
+  var names = ['Crops' ,'Soil','Baren/Buildup','Waterbodies', 'Sparse vegetation', 'Transitional vegetation', 'Mixed forest', 'Coniferous'];
   
   // Add color and and names to legend
-  for (var i = 0; i < 9; i++) {
+  for (var i = 0; i < 8; i++) {
     legend.add(makeRow(classPalette[i], names[i]));
     }  
+ 
+// //----------------RF with DW lagend
+//   // Create legend title
+//   var legendTitle2 = ui.Label({
+//     value: 'Land Cover (DW with RF)',
+//     style: {
+//       fontWeight: 'bold',
+//       fontSize: '14px',
+//       margin: '0 0 4px 0',
+//       padding: '0'
+//       }
+//   });
+ 
+//   // Add the title to the panel
+//   legend.add(legendTitle2);
+  
+//   // name of the legend
+//   var names2 = ['Crops','Buildup','Baren' ,'Soil','Waterbodies', 'Sparse vegetation', 'Transitional vegetation', 'Mixed forest', 'Coniferous'];
+  
+//   // Add color and and names to legend
+//   for (var j = 0; j < 9; j++) {
+//     legend.add(makeRow(classPalette_RFwDW[j], names2[j]));
+    //}  
  
 
   legendPanel.add(legend);
