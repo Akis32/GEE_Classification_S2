@@ -5709,6 +5709,7 @@ var GAUL_L2 = ee.FeatureCollection("FAO/GAUL/2015/level2"),
               "system:index": "101"
             })]),
     DW = ee.ImageCollection("GOOGLE/DYNAMICWORLD/V1");
+
 //----------------------- Land Cover Classification ------------------------//
 
 
@@ -5724,8 +5725,8 @@ var classPalette = [
   '#ffffa8',   //Sparse Vegetation (4)
   '#a6e64d',   //Transitional Woodland (5)
   '#4dff00',   //MixedForest (6)
-  '#00a600',   //Coniferous (7)
-  '#5b3737',   //Scar (8)
+  '#00a600'   //Coniferous (7)
+ 
   ];
   
 var classPalette_RFwDW = [
@@ -5737,8 +5738,8 @@ var classPalette_RFwDW = [
   '#ffffa8',   //Sparse Vegetation (5)
   '#a6e64d',   //Transitional Woodland (6)
   '#4dff00',   //MixedForest (7)
-  '#00a600',   //Coniferous (8)
-  '#5b3737',   //Scar (9)
+  '#00a600'  //Coniferous (8)
+  
   ];
   
   
@@ -5825,8 +5826,7 @@ function sampling(){
     .merge(Crops)
     .merge(Transitional)
     .merge(MixedForest)
-    .merge(Coniferous)
-    .merge(Scar);
+    .merge(Coniferous);
   
   // Stores the land cover labels
   var label = 'Class';
@@ -5946,7 +5946,6 @@ function main (){
   .where(classifiedImg2022_maskDW.eq(5),6) //Isolate Transitional Woodland RF (class 6)
   .where(classifiedImg2022_maskDW.eq(6),7) //Isolate MixedForest RF (class 7)
   .where(classifiedImg2022_maskDW.eq(7),8) //Isolate Coniferous RF (class 8)
-  .where(classifiedImg2022_maskDW.eq(8),9) //Isolate Scar RF (class 9)
   .clip(Greece);
   
   //Classified image smoothing
@@ -6002,7 +6001,6 @@ function main (){
   .where(classifiedImg2023_maskDW.eq(5),6) //Isolate Transitional Woodland RF (class 6)
   .where(classifiedImg2023_maskDW.eq(6),7) //Isolate MixedForest RF (class 7)
   .where(classifiedImg2023_maskDW.eq(7),8) //Isolate Coniferous RF (class 8)
-  .where(classifiedImg2023_maskDW.eq(8),9) //Isolate Scar RF (class 9)
   .clip(Greece);
   
   //Classified image smoothing
@@ -6017,17 +6015,17 @@ function main (){
   Map.centerObject(Greece,8);
   Map.addLayer(Img2022,Viz_CI,"Color Infrared 2022",false);
   //Map.addLayer(classclassifiedImg_mod2022, {palette: classPalette, min: 0, max: 8}, 'Land Cover 2022 (Corine crops)',false);
-  Map.addLayer(classifiedImg2022, {palette: classPalette, min: 0, max: 8}, 'Land Cover 2022',false);
+  Map.addLayer(classifiedImg2022, {palette: classPalette, min: 0, max: 7}, 'Land Cover 2022',false);
   Map.addLayer(DW2022,dwVisParams,'DW land cover 2022',false);
-  Map.addLayer(classifiedImg2022_RFwDWsmooth, {palette: classPalette_RFwDW, min: 0, max: 9}, 'Land Cover 2022 hybrid general',false);
-  Map.addLayer(classifiedImg2022_RFwDW, {palette: classPalette_RFwDW, min: 0, max: 9}, 'Land Cover 2022 hybrid');
+  Map.addLayer(classifiedImg2022_RFwDWsmooth, {palette: classPalette_RFwDW, min: 0, max: 8}, 'Land Cover 2022 hybrid general',false);
+  Map.addLayer(classifiedImg2022_RFwDW, {palette: classPalette_RFwDW, min: 0, max: 8}, 'Land Cover 2022 hybrid');
 
   Map.addLayer(Img2023,Viz_CI,"Color Infrared 2023",false);
   //Map.addLayer(classclassifiedImg_mod2023, {palette: classPalette, min: 0, max: 8}, 'Land Cover 2023 (Corine crops)',false);
-  Map.addLayer(classifiedImg2023, {palette: classPalette, min: 0, max: 8}, 'Land Cover 2023',false);
+  Map.addLayer(classifiedImg2023, {palette: classPalette, min: 0, max: 7}, 'Land Cover 2023',false);
   Map.addLayer(DW2023,dwVisParams,'DW land cover 2023',false);
-  Map.addLayer(classifiedImg2023_RFwDWsmooth, {palette: classPalette_RFwDW, min: 0, max: 9}, 'Land Cover 2023 hybrid general',false);
-  Map.addLayer(classifiedImg2023_RFwDW, {palette: classPalette_RFwDW, min: 0, max: 9}, 'Land Cover 2023 hybrid');
+  Map.addLayer(classifiedImg2023_RFwDWsmooth, {palette: classPalette_RFwDW, min: 0, max: 8}, 'Land Cover 2023 hybrid general',false);
+  Map.addLayer(classifiedImg2023_RFwDW, {palette: classPalette_RFwDW, min: 0, max: 8}, 'Land Cover 2023 hybrid');
   
   Map.addLayer(CorineLC2018_Clip, {}, 'Corine 2018');
   
@@ -6114,10 +6112,10 @@ function main (){
   legend.add(legendTitle2);
   
   // name of the legend
-  var names2 = ['Crops','Buildup','Baren' ,'Soil','Waterbodies', 'Sparse vegetation', 'Transitional vegetation', 'Mixed forest', 'Coniferous','Earth scar'];
+  var names2 = ['Crops','Buildup','Baren' ,'Soil','Waterbodies', 'Sparse vegetation', 'Transitional vegetation', 'Mixed forest', 'Coniferous'];
   
   // Add color and and names to legend
-  for (var j = 0; j < 10; j++) {
+  for (var j = 0; j < 9; j++) {
     legend.add(makeRow(classPalette_RFwDW[j], names2[j]));
     }  
  
@@ -6137,7 +6135,3 @@ function main (){
 }
 
 main();
-
-
-main();
-
