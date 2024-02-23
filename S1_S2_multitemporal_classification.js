@@ -6795,7 +6795,6 @@ var GAUL_L2 = ee.FeatureCollection("FAO/GAUL/2015/level2"),
             })]),
     S1 = ee.ImageCollection("COPERNICUS/S1_GRD");
 
-
 //-----------------------  Land Cover Classification with parameters ------------------------
 
 //------------------------Constants----------------------------------//
@@ -6982,7 +6981,7 @@ function main (){
   var S1_ImgA = S1.filter(ee.Filter.eq('instrumentMode','IW'))
                     .filter(ee.Filter.eq('orbitProperties_pass','ASCENDING'))
                     .filterMetadata('resolution_meters','equals',10)
-                    .filterDate('2022-09-01','2022-12-01')
+                    .filterDate('2022-01-01','2022-12-01')
                     .filterBounds(Greece)
                     .select('VV')
                     .min()
@@ -6992,7 +6991,7 @@ function main (){
   var S1_ImgD = S1.filter(ee.Filter.eq('instrumentMode','IW'))
                     .filter(ee.Filter.eq('orbitProperties_pass','DESCENDING'))
                     .filterMetadata('resolution_meters','equals',10)
-                    .filterDate('2022-09-01','2022-12-01')
+                    .filterDate('2022-01-01','2022-12-01')
                     .filterBounds(Greece)
                     .select('VV')
                     .min()
