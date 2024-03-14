@@ -7147,7 +7147,14 @@ function main (){
   var classifiedImg2023 = img_bands23.classify(classifier);
   
   //Final classification layer
-  var Land_Cover2023 = classifiedImg2023.multiply(S1_urban_Final);
+  var Land_Cover2023_raw = classifiedImg2023.multiply(S1_urban_Final);
+  
+  //pixel fixing
+  var nulls2023 = Land_Cover2023_raw.mask().not();
+  var Land_Cover2023 = ee.Image(0).clip(Greece)
+    .where(nulls2023.eq(1),Land_Cover2022)
+    .where(nulls2023.eq(0),Land_Cover2023_raw);
+  
   
   Map.centerObject(Greece);
   //Add to map
